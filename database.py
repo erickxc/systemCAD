@@ -5,6 +5,9 @@ class Database:
         self.conn = sqlite3.connect('sistema_academico.db')
         self.cursor = self.conn.cursor()
 
+    def commit(self):
+        self.conn.commit()
+
     def execute(self, query, params=()):
         self.cursor.execute(query, params)
         self.conn.commit()
@@ -13,5 +16,5 @@ class Database:
         self.cursor.execute(query, params)
         return self.cursor.fetchall()
 
-    def __del__(self):
+    def close(self):
         self.conn.close()
