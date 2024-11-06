@@ -1,50 +1,52 @@
-from database import Database
+import sqlite3
 
 class Curso:
-
     def __init__(self):
-        self.db = Database()
+        # Inicializa a conexão com o banco de dados e o cursor
+        self.conexao = sqlite3.connect("sistema_academico.db")  # Substitua pelo caminho correto do seu banco de dados
+        self.cursor = self.conexao.cursor()
+
+        # Cria a tabela cursos se ela não existir
         self.criar_tabela()
 
     def criar_tabela(self):
-        query = """
-        CREATE TABLE IF NOT EXISTS cursos (
-        curso_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL
-        )
-        """
         try:
-            self.db.execute(query)
-            print("Tabela 'cursos' criada com sucesso (ou já existe).")
+            # Criação da tabela cursos, caso ela não exista
+            self.cursor.execute('''
+                CREATE TABLE IF NOT EXISTS cursos (
+                    curso_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nome TEXT NOT NULL
+                )
+            ''')
+            self.conexao.commit()
+            print("Tabela 'cursos' criada ou já existente.")
         except Exception as e:
-            print(f"Erro ao criar a tabela 'cursos': {e}")
+            print(f"Erro ao criar a tabela cursos: {e}")
 
     def cadastrar(self, nome):
-        db = Database()
         try:
-            db.execute("INSERT INTO cursos (nome) VALUES (?)", (nome,))
-            db.commit()  # Confirma a operação
+            self.cursor.execute("INSERT INTO cursos (nome) VALUES (?)", (nome,))
+            self.conexao.commit()
             print(f"Curso '{nome}' cadastrado com sucesso.")
         except Exception as e:
-            print(f"Erro ao cadastrar o curso '{nome}': {e}")
-        finally:
-            db.close()  # Fecha a conexão com o banco de dados
-
-    def listar(self, tabela):
-        db = Database()
-        db.execute("SELECT * FROM cursos")
-        for row in db.cursor.fetchall():
-            tabela.insert("", tk.END, values=row)
-        db.close()
-
-    def atualizar(self, curso_id, nome):
-        db = Database()
-        db.execute("UPDATE cursos SET nome=? WHERE curso_id=?", (nome, curso_id))
-        db.commit()
-        db.close()
+            print(f"Erro ao cadastrar o curso: {e}")
 
     def excluir(self, curso_id):
-        db = Database()
-        db.execute("DELETE FROM cursos WHERE curso_id=?", (curso_id,))
-        db.commit()
-        db.close()
+        try:
+            # Executa a exclusão com o ID do curso
+            self.cursor.execute("DELETE FROM cursos WHERE curso_id = ?", (curso_id,))
+            self.conexao.commit()  # Confirma a exclusão
+            print(f"Curso com ID {curso_id} excluído com sucesso.")
+        except Exception as e:
+            print(f"Erro ao excluir o curso: {e}")
+
+    def listar(self, tabela):
+        # Exibe todos os cursos na tabela
+        try:
+            self.cursor.execute("SELECT curso_id, nome FROM cursos")
+            rows = self.cursor.fetchall()
+            tabela.delete(*tabela.get_children())  # Limpa a tabela antes de inserir novos dados
+            for row in rows:
+                tabela.insert("", "end", values=row)
+        except Exception as e:
+            print(f"Erro ao listar os cursos: {e}")
